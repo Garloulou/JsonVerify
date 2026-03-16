@@ -22,6 +22,8 @@ Outil de vérification de taille de dialogues traduits au format JSON, conçu po
 ## 🚀 Lancement
 
 ```bash
+git clone https://github.com/Garloulou/JsonVerify.git
+cd JsonVerify
 python JsonVerify.py
 ```
 
