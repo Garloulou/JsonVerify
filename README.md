@@ -1,7 +1,5 @@
 # 🔍 JsonVerify
-
-Outil de vérification de taille de dialogues traduits au format JSON, conçu pour détecter les entrées trop longues avant intégration en jeu.
-
+Outil de vérification de taille de dialogues traduits au format JSON, conçu pour détecter les entrées trop longues pour ce [projet](https://github.com/chenetulipe/P2-FR-IS-PSP).
 ---
 
 ## ✨ Fonctionnalités
