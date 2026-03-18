@@ -360,67 +360,79 @@ class JsonVerify:
         return logs
 
     def process_directory(self):
-        dir_path = filedialog.askdirectory()
-        if not dir_path: return
+            dir_path = filedialog.askdirectory()
+            if not dir_path: return
 
-        output_base = os.path.join(dir_path, "VERIFICATION_OUTPUT")
-        self.log_area.delete('1.0', tk.END)
-        self._reset_stats()
+            output_base = os.path.join(dir_path, "VERIFICATION_OUTPUT")
+            self.log_area.delete('1.0', tk.END)
+            self._reset_stats()
 
-        json_files = [f for f in os.listdir(dir_path) if f.endswith(".json")]
-        total_files = len(json_files)
+            json_files = [f for f in os.listdir(dir_path) if f.endswith(".json")]
+            total_files = len(json_files)
 
-        self.log(f"Mode Dossier : {dir_path}", "info")
-        self.log(f"{total_files} fichier(s) JSON trouve(s)\n", "info")
+            self.log(f"Mode Dossier : {dir_path}", "info")
+            self.log(f"{total_files} fichier(s) JSON trouve(s)\n", "info")
 
-        if total_files == 0:
-            self.set_status("Aucun fichier JSON trouve.", NEON_AMBER, NEON_AMBER)
-            return
+            if total_files == 0:
+                self.set_status("Aucun fichier JSON trouve.", NEON_AMBER, NEON_AMBER)
+                return
 
-        global_errors = 0
-        global_ok     = 0
+            global_errors = 0
+            global_ok     = 0
 
-        for i, filename in enumerate(json_files, 1):
-            file_full_path = os.path.join(dir_path, filename)
-            file_slug = filename.replace(".json", "")
+            for i, filename in enumerate(json_files, 1):
+                file_full_path = os.path.join(dir_path, filename)
+                file_slug = filename.replace(".json", "")
 
-            with open(file_full_path, 'r', encoding='utf-8') as f:
-                self.json_data = json.load(f)
+                with open(file_full_path, 'r', encoding='utf-8') as f:
+                    self.json_data = json.load(f)
 
-            logs = self.run_verification(silent=True)
-            self.progress.set(i / total_files)
+                logs = self.run_verification(silent=True)
+                self.progress.set(i / total_files)
 
-            if logs and logs.strip():
-                self.log(f"[{i}/{total_files}] {filename}", "dim")
-                file_output_dir = os.path.join(output_base, file_slug)
-                os.makedirs(file_output_dir, exist_ok=True)
+                # Si on a des logs, cela signifie que le fichier a été traduit et analysé
+                if logs and logs.strip():
+                    
+                    # S'il y a des erreurs détectées
+                    if self.error_ids:
+                        self.log(f"[{i}/{total_files}] {filename}", "dim")
+                        global_errors += len(self.error_ids)
+                        
+                        # 🔴 CRÉATION DES FICHIERS UNIQUEMENT POUR LES ERREURS
+                        file_output_dir = os.path.join(output_base, file_slug)
+                        os.makedirs(file_output_dir, exist_ok=True)
 
-                log_path = os.path.join(file_output_dir, f"logs_{file_slug}.txt")
-                with open(log_path, "w", encoding="utf-8") as f:
-                    f.write(logs)
+                        log_path = os.path.join(file_output_dir, f"logs_{file_slug}.txt")
+                        with open(log_path, "w", encoding="utf-8") as f:
+                            f.write(logs)
 
-                if self.error_ids:
-                    global_errors += len(self.error_ids)
-                    github_text = self.generate_github_text(filename, self.error_ids)
-                    github_path = os.path.join(file_output_dir, f"github_{file_slug}.txt")
-                    with open(github_path, "w", encoding="utf-8") as f:
-                        f.write(github_text)
-                    self.log(f"  🔴 {len(self.error_ids)} erreur(s) — consulter logs_{file_slug}.txt", "error")
-                else:
-                    global_ok += 1
-                    self.log("  🟢 OK", "success")
+                        github_text = self.generate_github_text(filename, self.error_ids)
+                        github_path = os.path.join(file_output_dir, f"github_{file_slug}.txt")
+                        with open(github_path, "w", encoding="utf-8") as f:
+                            f.write(github_text)
+                            
+                        self.log(f"  🔴 {len(self.error_ids)} erreur(s) — consulter logs_{file_slug}.txt", "error")
+                    
+                    # S'il n'y a pas d'erreur
+                    else:
+                        # 🟢 LOG CONSOLE SEULEMENT (Pas de création de fichier)
+                        self.log(f"[{i}/{total_files}] {filename}", "dim")
+                        global_ok += 1
+                        self.log("  🟢 OK", "success")
+                        
+                # Si `logs` est vide (fichier non traduit), on ne fait rien (pas de else).
 
-        self.log(f"\n{global_ok}/{total_files} fichiers valides", "success")
-        if global_errors:
-            self.log(f"{global_errors} erreur(s) au total", "error")
-        self.log(f"Rapports : {output_base}", "info")
+            self.log(f"\n{global_ok}/{total_files} fichiers valides", "success")
+            if global_errors:
+                self.log(f"{global_errors} erreur(s) au total", "error")
+            self.log(f"Rapports : {output_base}", "info")
 
-        self.set_status(
-            f"Termine - {global_ok} OK, {global_errors} erreur(s)",
-            NEON_GREEN if global_errors == 0 else NEON_AMBER,
-            NEON_GREEN if global_errors == 0 else NEON_AMBER
-        )
-        messagebox.showinfo("JsonVerify", f"Verification terminee !\n{global_ok}/{total_files} fichiers OK.")
+            self.set_status(
+                f"Termine - {global_ok} OK, {global_errors} erreur(s)",
+                NEON_GREEN if global_errors == 0 else NEON_AMBER,
+                NEON_GREEN if global_errors == 0 else NEON_AMBER
+            )
+            messagebox.showinfo("JsonVerify", f"Verification terminee !\n{global_ok}/{total_files} fichiers OK.")
 
     def copy_github_issue(self):
         if self.error_ids:
