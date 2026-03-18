@@ -4,6 +4,8 @@ from tkinter import filedialog, messagebox, scrolledtext
 import os
 import threading
 
+from utils import estimate_bytes
+
 BG_DEEP    = "#0d0808"
 BG_PANEL   = "#140a0a"
 BG_CARD    = "#1c0f0f"
@@ -206,30 +208,7 @@ class JsonVerify:
         self.status_dot.config(fg=dot)
 
     def estimate_bytes(self, text):
-        repls = [('é','Ğ'),('è','ò'),('ê','¿'),('ô','Æ'),('É','Ņ'),
-                 ('È','Ũ'),('Î','£'),('Ô','ō'),('Û','ĵ'),('œ','ë'),('Œ','Ǩ')]
-        for old, new in repls:
-            text = text.replace(old, new)
-
-        CTRL_TAGS = ["[SP]","\n","[E1]","[E2]","[E3]","[E4]","[1205]","[001E]",
-                     "[1432]","[0014]","[0002]","[0010]","[NULL]"]
-        count = 0
-        i = 0
-        while i < len(text):
-            if text[i] == '[':
-                if ']' not in text[i:]: return -1
-                end = text.index(']', i)
-                tag = text[i:end+1]
-                if tag == "[NULL]":
-                    i = end + 1
-                    continue
-                found = (tag in CTRL_TAGS) or (tag.startswith("[U+") and len(tag)==8) or (len(tag)==6)
-                count += 2 if found else len(tag[1:-1]) * 2
-                i = end + 1
-            else:
-                count += 2
-                i += 1
-        return count
+        return estimate_bytes(text)
 
     def generate_github_text(self, filename, error_ids):
         ids_str = ", ".join([f"`{id_}`" for id_ in error_ids])
@@ -292,7 +271,7 @@ class JsonVerify:
                 self.error_ids.append(str(d['id']))
                 tag   = "crash" if size == -1 else "error"
                 label = "💀 CRASH" if size == -1 else "🔴 TROP LONG"
-                
+
                 if size != -1:
                     excess_bytes = size - limit
                     excess_chars = excess_bytes // 2
@@ -337,7 +316,7 @@ class JsonVerify:
             if size == -1 or size > limit:
                 self.error_ids.append(str(d['id']))
                 label = "💀 CRASH" if size == -1 else "🔴 TROP LONG"
-                
+
                 if size != -1:
                     excess_bytes = size - limit
                     excess_chars = excess_bytes // 2
@@ -345,7 +324,7 @@ class JsonVerify:
                     msg = f"{label} ID {d['id']} : +{excess_bytes} bytes (+{excess_chars} chars en trop) | Max: ~{max_chars} chars"
                 else:
                     msg = f"{label} ID {d['id']} : Format tag invalide"
-                    
+
                 logs += msg + "\n"
                 if not silent: self.log(msg, "error")
             else:
@@ -392,12 +371,12 @@ class JsonVerify:
 
                 # Si on a des logs, cela signifie que le fichier a été traduit et analysé
                 if logs and logs.strip():
-                    
+
                     # S'il y a des erreurs détectées
                     if self.error_ids:
                         self.log(f"[{i}/{total_files}] {filename}", "dim")
                         global_errors += len(self.error_ids)
-                        
+
                         # 🔴 CRÉATION DES FICHIERS UNIQUEMENT POUR LES ERREURS
                         file_output_dir = os.path.join(output_base, file_slug)
                         os.makedirs(file_output_dir, exist_ok=True)
@@ -410,16 +389,16 @@ class JsonVerify:
                         github_path = os.path.join(file_output_dir, f"github_{file_slug}.txt")
                         with open(github_path, "w", encoding="utf-8") as f:
                             f.write(github_text)
-                            
+
                         self.log(f"  🔴 {len(self.error_ids)} erreur(s) — consulter logs_{file_slug}.txt", "error")
-                    
+
                     # S'il n'y a pas d'erreur
                     else:
                         # 🟢 LOG CONSOLE SEULEMENT (Pas de création de fichier)
                         self.log(f"[{i}/{total_files}] {filename}", "dim")
                         global_ok += 1
                         self.log("  🟢 OK", "success")
-                        
+
                 # Si `logs` est vide (fichier non traduit), on ne fait rien (pas de else).
 
             self.log(f"\n{global_ok}/{total_files} fichiers valides", "success")
