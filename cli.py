@@ -54,7 +54,22 @@ class CLI:
         self.results[name]['error_cnt'] = err_cnt
         self.results[name]['skip'] = skip_cnt
 
-    def export(self):
+    def export(self, asMarkdown=False):
+        if asMarkdown:
+            print("| File | OK | ERROR | SKIP |")
+            print("|------|----|-------|------|")
+            for name, stats in self.results.items():
+                print(f"| {name} | {stats['ok']} | {stats['error_cnt']} | {stats['skip']} |")
+
+                print("\n")
+                if (stats['errors']):
+                    print("| **Errors** |")
+                    print("| --- |")
+                    for error in stats['errors']:
+                        print(f"| - {error} |")
+                    print("\n")
+            return
+
         for idx, (name, stats) in enumerate(self.results.items(), 1):
             print(f"{name}: {stats['ok']} OK, {stats['error_cnt']} ERROR, {stats['skip']} SKIP")
 
@@ -65,7 +80,14 @@ class CLI:
     def hasErrors(self):
         return any(stats['error_cnt'] > 0 for stats in self.results.values())
 
-def main(files)-> int:
+def main(args)-> int:
+    markdown = False
+    if '--markdown' in args:
+        args.remove('--markdown')
+        markdown = True
+
+    files = args
+
     if not files:
         print("Usage: python cli.py <file1> <file2> ...")
         return 1
@@ -75,7 +97,7 @@ def main(files)-> int:
     for file in files:
         cli.process_file(file)
 
-    cli.export()
+    cli.export(markdown)
 
     return 1 if cli.hasErrors() else 0
 
