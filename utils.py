@@ -14,6 +14,7 @@ def estimate_bytes(text):
             end = text.index(']', i)
             tag = text[i:end+1]
             if tag == "[NULL]":
+                count += 2
                 i = end + 1
                 continue
             found = (tag in CTRL_TAGS) or (tag.startswith("[U+") and len(tag)==8) or (len(tag)==6)
