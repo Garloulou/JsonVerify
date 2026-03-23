@@ -54,11 +54,13 @@ class CLI:
         self.results[name]['error_cnt'] = err_cnt
         self.results[name]['skip'] = skip_cnt
 
-    def export(self, asMarkdown=False):
+    def export(self, asMarkdown=False, errorsOnly=False):
         if asMarkdown:
             print("| File | OK | ERROR | SKIP |")
             print("|------|----|-------|------|")
             for name, stats in self.results.items():
+                if errorsOnly and stats['error_cnt'] == 0:
+                    continue
                 print(f"| {name} | {stats['ok']} | {stats['error_cnt']} | {stats['skip']} |")
 
                 print("\n")
@@ -71,6 +73,8 @@ class CLI:
             return
 
         for idx, (name, stats) in enumerate(self.results.items(), 1):
+            if errorsOnly and stats['error_cnt'] == 0:
+                continue
             print(f"{name}: {stats['ok']} OK, {stats['error_cnt']} ERROR, {stats['skip']} SKIP")
 
             if (stats['errors']): print("========== ERROR ==========")
@@ -81,10 +85,15 @@ class CLI:
         return any(stats['error_cnt'] > 0 for stats in self.results.values())
 
 def main(args)-> int:
-    markdown = False
+    markdown = errorsOnly = False
+
     if '--markdown' in args:
         args.remove('--markdown')
         markdown = True
+
+    if '--errors-only' in args:
+        args.remove('--errors-only')
+        errorsOnly = True
 
     files = args
 
@@ -97,7 +106,7 @@ def main(args)-> int:
     for file in files:
         cli.process_file(file)
 
-    cli.export(markdown)
+    cli.export(markdown, errorsOnly)
 
     return 1 if cli.hasErrors() else 0
 
