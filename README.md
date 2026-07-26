@@ -307,7 +307,7 @@ Consultez le fichier LICENSE pour le texte complet.
 
 Auteur principal : Garloulou
 
-Contributeurs : Nolan
+Contributeurs : chenetulipe
 
 Inspiré par : P2 IS Tool et le projet Persona 2: Innocent Sin - Traduction Française
 
