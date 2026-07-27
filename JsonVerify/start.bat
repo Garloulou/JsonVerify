@@ -30,6 +30,27 @@ if errorlevel 1 (
 echo [OK] Python et Node.js detectes
 echo.
 
+REM --- VÉRIFICATION & INSTALLATION BACKEND ---
+if exist "%~dp0backend\requirements.txt" (
+  echo [INFO] Verification des dependances Python...
+  python -m pip install -r "%~dp0backend\requirements.txt" >nul 2>&1
+)
+
+REM --- VÉRIFICATION & INSTALLATION FRONTEND ---
+if not exist "%~dp0frontend\node_modules\" (
+  echo [INFO] Le dossier node_modules est absent. Installation des dependances npm...
+  cd /d "%~dp0frontend"
+  call npm install
+  if errorlevel 1 (
+    echo [ERROR] Echec de l'installation des dependances frontend.
+    pause
+    exit /b 1
+  )
+  cd /d "%~dp0"
+  echo [OK] Dependances Frontend installees avec succes.
+  echo.
+)
+
 echo Lancement du backend...
 start "JsonVerify - Backend (Port 8000)" cmd /c "cd /d %~dp0backend && python app.py"
 
